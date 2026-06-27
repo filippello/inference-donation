@@ -1,11 +1,10 @@
-# CLIProxyAPI config — runs on the DONOR's machine.
+# Template. donate.sh copies this to config.yaml (gitignored) and fills the key.
 # Your OAuth login (Claude/Codex) lives in ./auths and NEVER leaves your machine.
 
 port: 8317
 
-# Client key the gateway uses to reach YOU. Generate your own:
-#   openssl rand -hex 16   ->   sk-donor-<paste>
-# Give this value (and your tunnel URL) to the gateway operator.
+# Client key the gateway uses to reach YOU. donate.sh generates one automatically,
+# or set your own:  openssl rand -hex 16  ->  sk-donor-<paste>
 api-keys:
   - "sk-donor-CHANGE-ME"
 

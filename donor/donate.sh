@@ -5,6 +5,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p auths logs
 
+# 0. Seed runtime config from the template on first run (config.yaml is gitignored).
+[ -f config.yaml ] || cp config.example.yaml config.yaml
+
 # 1. Ensure this donor has a client key (the gateway uses it to reach you).
 if grep -q "sk-donor-CHANGE-ME" config.yaml; then
   KEY="sk-donor-$(openssl rand -hex 16)"

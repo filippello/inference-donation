@@ -5,3 +5,6 @@ donor/logs/
 **/__pycache__/
 *.pyc
 *.bak
+
+# donor runtime config (holds your real client key)
+donor/config.yaml
