@@ -51,6 +51,32 @@ cd local-test
 ./test-local.sh
 ```
 
+## Probar con tu suscripción real (el test que importa)
+
+Probá que **tu Claude/Codex se vuelve una API** — aislado, sin túnel ni gateway:
+
+```bash
+cd donor
+./donate.sh claude                        # login OAuth (flujo de pegar URL)
+
+# corré el server del donante publicando 8317 solo para esta prueba local:
+docker run --rm -p 8317:8317 \
+  -v "$PWD/config.yaml:/CLIProxyAPI/config.yaml" \
+  -v "$PWD/auths:/root/.cli-proxy-api" \
+  --entrypoint ./CLIProxyAPI eceasy/cli-proxy-api:latest -config config.yaml &
+
+# pedile a Claude directo, con tu client key:
+KEY=$(grep -Eo 'sk-donor-[a-z0-9]+' config.yaml | head -1)
+curl -s http://localhost:8317/v1/chat/completions \
+  -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+  -d '{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"deci hola"}]}' \
+  | jq -r .choices[0].message.content
+```
+
+Si responde Claude de verdad, lo difícil ya funciona. El pipeline gateway + keys
+ya está verificado con el mock (`local-test/`), así que pipear el donante real es
+solo apuntar `add-donor.sh` a tu donante.
+
 ## Quickstart
 
 > Los **receptores los centralizamos nosotros**: corremos un único gateway y
@@ -66,9 +92,11 @@ docker compose up -d
 ### Donante (corre en su máquina)
 ```bash
 cd donor
-./donate.sh                               # un comando: key + login + túnel
-# si falta login, te muestra el comando real de tu binario; re-corré ./donate.sh
-# al final imprime tu URL trycloudflare + tu client key para pasarnos
+./donate.sh                               # un comando: key + login OAuth + túnel
+# ./donate.sh claude | codex | both   (default: claude)
+# el login imprime una URL: abrila, autorizá, copiá la URL de redirect (localhost
+# no carga, es normal) y pegala. Token queda en ./auths, en tu máquina.
+# re-corré ./donate.sh -> imprime tu URL trycloudflare + tu client key para pasarnos
 ```
 Pasale al operador tu **URL** y tu **client key**. El operador te suma:
 ```bash

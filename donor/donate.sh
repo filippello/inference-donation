@@ -12,15 +12,30 @@ if grep -q "sk-donor-CHANGE-ME" config.yaml; then
 fi
 KEY=$(grep -Eo 'sk-donor-[a-z0-9]+' config.yaml | head -1)
 
-# 2. If no subscription is logged in yet, show the REAL login commands from your
-#    own binary (we don't guess them) and stop here.
+# 2. If no subscription is logged in yet, run the OAuth login now.
+#    Provider: ./donate.sh [claude|codex|both]  (default: claude)
 if [ -z "$(ls -A auths 2>/dev/null)" ]; then
-  echo "No subscription logged in yet. Available auth commands for your build:"
-  echo "------------------------------------------------------------------"
-  docker compose run --rm cli-proxy-api --help 2>&1 | sed -n '1,40p' || true
-  echo "------------------------------------------------------------------"
-  echo "Run the Claude and/or Codex login command shown above (opens your browser),"
-  echo "then re-run ./donate.sh. Your token stays in ./auths on this machine."
+  PROVIDER="${1:-claude}"
+  IMG="eceasy/cli-proxy-api:latest"
+  login() {  # $1 = -claude-login | -codex-login
+    echo
+    echo "→ OAuth login ($1). A URL will print below."
+    echo "  1) Open it in your browser and authorize."
+    echo "  2) Your browser redirects to a localhost page that WON'T load — that's fine."
+    echo "  3) Copy that full URL from the address bar and paste it here when asked."
+    docker run --rm -it \
+      -v "$PWD/config.yaml:/CLIProxyAPI/config.yaml" \
+      -v "$PWD/auths:/root/.cli-proxy-api" \
+      --entrypoint ./CLIProxyAPI "$IMG" -config config.yaml "$1" -no-browser
+  }
+  case "$PROVIDER" in
+    claude) login -claude-login ;;
+    codex)  login -codex-login ;;
+    both)   login -claude-login; login -codex-login ;;
+    *) echo "unknown provider '$PROVIDER' (use: claude|codex|both)"; exit 1 ;;
+  esac
+  echo
+  echo "✓ logged in. Token saved in ./auths (stays on this machine). Re-run ./donate.sh"
   exit 0
 fi
 
