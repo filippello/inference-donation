@@ -1,0 +1,7 @@
+# secrets & donor logins — never commit
+.env
+donor/auths/
+donor/logs/
+**/__pycache__/
+*.pyc
+*.bak

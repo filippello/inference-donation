@@ -1,0 +1,22 @@
+services:
+  cli-proxy-api:
+    image: eceasy/cli-proxy-api:latest
+    container_name: relief-donor
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/CLIProxyAPI/config.yaml
+      - ./auths:/root/.cli-proxy-api      # your OAuth logins live here, on YOUR disk
+      - ./logs:/CLIProxyAPI/logs
+    # No "ports:" on purpose — nothing is opened to the internet directly.
+    # cloudflared reaches it over the internal docker network instead.
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: relief-donor-tunnel
+    restart: unless-stopped
+    # Outbound-only tunnel: your home machine dials OUT to Cloudflare and gets a
+    # public https URL. No port-forwarding, no firewall changes. Traffic to
+    # Anthropic/OpenAI still originates from your residential IP.
+    command: tunnel --no-autoupdate --url http://cli-proxy-api:8317
+    depends_on:
+      - cli-proxy-api

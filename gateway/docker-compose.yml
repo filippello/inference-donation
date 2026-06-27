@@ -1,0 +1,37 @@
+services:
+  gateway:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: relief-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}        # sk-... admin key (issues recipient keys)
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY}            # encrypts stored credentials at rest
+      DATABASE_URL: postgresql://litellm:${POSTGRES_PASSWORD}@db:5432/litellm
+      STORE_MODEL_IN_DB: "true"                        # lets us add/remove donors at runtime via API
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: relief-gateway-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - gateway-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gateway-db:

@@ -1,0 +1,38 @@
+# Self-contained local test stack: gateway + db + a MOCK donor.
+# Fixed test secrets inline so it's truly one command. Do NOT use in production.
+services:
+  gateway:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      LITELLM_MASTER_KEY: sk-test-master
+      LITELLM_SALT_KEY: test-salt
+      DATABASE_URL: postgresql://litellm:testpw@db:5432/litellm
+      STORE_MODEL_IN_DB: "true"
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    depends_on:
+      db: { condition: service_healthy }
+      mock-donor: { condition: service_started }
+
+  mock-donor:
+    image: python:3.12-slim
+    restart: unless-stopped
+    volumes:
+      - ./mock_donor.py:/app/mock_donor.py:ro
+    command: ["python", "/app/mock_donor.py"]
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: testpw
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

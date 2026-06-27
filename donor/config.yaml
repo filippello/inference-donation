@@ -1,0 +1,18 @@
+# CLIProxyAPI config — runs on the DONOR's machine.
+# Your OAuth login (Claude/Codex) lives in ./auths and NEVER leaves your machine.
+
+port: 8317
+
+# Client key the gateway uses to reach YOU. Generate your own:
+#   openssl rand -hex 16   ->   sk-donor-<paste>
+# Give this value (and your tunnel URL) to the gateway operator.
+api-keys:
+  - "sk-donor-CHANGE-ME"
+
+auth-dir: "/root/.cli-proxy-api"
+
+# Round-robin across every account you've logged in (you can donate Claude AND
+# Codex from the same box). Logged-in accounts live as JSON files in ./auths.
+
+logging:
+  level: "info"
